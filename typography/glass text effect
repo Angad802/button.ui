@@ -1,0 +1,12 @@
+"use client";
+import {useEffect,useRef,useState,type CSSProperties} from 'react';
+import sceneDocument from './scene-document';
+/** Glass Text Effect — original: https://tympanus.net/Development/SlicedTextEffect/ */
+export default function CodropsScene({autoplay=true,className,style}:{autoplay?:boolean;className?:string;style?:CSSProperties}){
+ const host=useRef<HTMLDivElement>(null),frame=useRef<HTMLIFrameElement>(null);const [size,setSize]=useState({width:1000,height:700,scale:1});const [ready,setReady]=useState(false);const [cycle,setCycle]=useState(0);
+ useEffect(()=>{const receive=(e:MessageEvent)=>{if(autoplay&&e.source===frame.current?.contentWindow&&e.data?.type==='podie:replay')setCycle(x=>x+1)};window.addEventListener('message',receive);return()=>window.removeEventListener('message',receive)},[autoplay]);
+ const play=()=>frame.current?.contentWindow?.postMessage({type:'podie:autoplay',value:autoplay},'*');
+ useEffect(()=>{const el=host.current;if(!el)return;const observer=new ResizeObserver(()=>{const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;const width=Math.max(1000,w),scale=w/width;setSize({width,height:Math.max(650,h/scale),scale})});observer.observe(el);setReady(true);return()=>observer.disconnect()},[]);
+ useEffect(play,[autoplay]);
+ return <div ref={host} className={className} style={{position:'relative',overflow:'hidden',width:'100%',height:'100%',minHeight:240,...style}}><iframe key={cycle} ref={frame} title="Glass Text Effect" style={{display:'block',border:0,width:size.width,height:size.height,transform:'scale('+size.scale+')',transformOrigin:'top left'}} sandbox="allow-scripts" referrerPolicy="no-referrer" srcDoc={ready?sceneDocument:undefined} onLoad={play}/></div>;
+}
